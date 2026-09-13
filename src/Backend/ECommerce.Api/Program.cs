@@ -1,6 +1,10 @@
 using ECommerce.Application;
 using ECommerce.Infrastructure;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,6 +17,19 @@ builder.Services.AddDbContext<ECommerceDbContext>(options =>
         options.UseInMemoryDatabase("ECommerceDevelopment");
     else
         options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+});
+builder.Services.AddIdentityCore<AppUser>(options =>
+{
+    options.Password.RequiredLength = 8;
+    options.User.RequireUniqueEmail = true;
+}).AddRoles<IdentityRole<Guid>>().AddEntityFrameworkStores<ECommerceDbContext>();
+var jwtKey = builder.Configuration["Jwt:Key"] ?? "development-only-secret-key-change-me-32-chars";
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJwtBearer(options => options.TokenValidationParameters = new TokenValidationParameters
+{
+    ValidateIssuerSigningKey = true,
+    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+    ValidateIssuer = false,
+    ValidateAudience = false
 });
 builder.Services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<ECommerceDbContext>());
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
@@ -47,6 +64,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseCors();
+app.UseAuthentication();
 app.UseAuthorization();
 app.MapControllers();
 app.Run();

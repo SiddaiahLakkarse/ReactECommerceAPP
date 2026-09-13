@@ -1,10 +1,12 @@
 using ECommerce.Application;
 using ECommerce.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace ECommerce.Infrastructure;
 
-public sealed class ECommerceDbContext(DbContextOptions<ECommerceDbContext> options) : DbContext(options), IUnitOfWork
+public sealed class ECommerceDbContext(DbContextOptions<ECommerceDbContext> options) : IdentityDbContext<AppUser, IdentityRole<Guid>, Guid>(options), IUnitOfWork
 {
     public DbSet<Product> Products => Set<Product>();
     public DbSet<Cart> Carts => Set<Cart>();
@@ -14,6 +16,7 @@ public sealed class ECommerceDbContext(DbContextOptions<ECommerceDbContext> opti
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
         modelBuilder.Entity<Product>().HasKey(x => x.Id);
         modelBuilder.Entity<Product>().Property(x => x.Price).HasPrecision(18, 2);
         modelBuilder.Entity<Product>().HasIndex(x => new { x.IsActive, x.Name });
@@ -25,6 +28,12 @@ public sealed class ECommerceDbContext(DbContextOptions<ECommerceDbContext> opti
         modelBuilder.Entity<Cart>().HasMany(x => x.Items).WithOne().HasForeignKey(x => x.CartId).OnDelete(DeleteBehavior.Cascade);
         modelBuilder.Entity<Order>().HasMany(x => x.Items).WithOne().HasForeignKey(x => x.OrderId).OnDelete(DeleteBehavior.Cascade);
     }
+
+}
+
+public sealed class AppUser : IdentityUser<Guid>
+{
+    public string DisplayName { get; set; } = string.Empty;
 }
 
 public sealed class ProductRepository(ECommerceDbContext db) : IProductRepository
