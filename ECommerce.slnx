@@ -1,2 +1,12 @@
 <Solution>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Backend/">
+    <Project Path="src/Backend/ECommerce.Api/ECommerce.Api.csproj" />
+    <Project Path="src/Backend/ECommerce.Application/ECommerce.Application.csproj" />
+    <Project Path="src/Backend/ECommerce.Domain/ECommerce.Domain.csproj" />
+    <Project Path="src/Backend/ECommerce.Infrastructure/ECommerce.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/ECommerce.Application.Tests/ECommerce.Application.Tests.csproj" />
+  </Folder>
 </Solution>
