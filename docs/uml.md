@@ -1,28 +1,29 @@
 # UML diagrams
 
-## Checkout sequence
+## Authentication and checkout sequence
 
 ```mermaid
 sequenceDiagram
   actor Customer
   participant UI as React UI
-  participant API as OrdersController
-  participant Handler as OrderCommands
-  participant Cart as CartRepository
-  participant Products as ProductRepository
-  participant Orders as OrderRepository
-  Customer->>UI: Checkout
-  UI->>API: POST /api/orders
-  API->>Handler: CreateOrderCommand
-  Handler->>Cart: Load cart
-  loop cart items
-	Handler->>Products: Load product
-	Handler->>Products: Decrease stock
-  end
-  Handler->>Orders: Add order
-  Handler->>Cart: Clear cart
+  participant Auth as AuthController
+  participant Identity as ASP.NET Identity
+  participant API as Customer/Orders API
+  participant Handler as Application handler
+  participant DB as EF Core database
+  Customer->>UI: Submit login or registration
+  UI->>Auth: POST /api/auth/login or /register
+  Auth->>Identity: Validate or create user
+  Identity-->>Auth: User identity
+  Auth-->>UI: JWT token
+  Customer->>UI: Add item and checkout
+  UI->>API: Authenticated request with Bearer token
+  API->>Handler: Create command using JWT user ID
+  Handler->>DB: Load cart and products
+  Handler->>DB: Decrease stock and create order
+  Handler->>DB: Clear cart
   Handler-->>API: OrderDto
-  API-->>UI: 200 OK
+  API-->>UI: Order response
 ```
 
 ## Command class model
@@ -32,9 +33,15 @@ classDiagram
   class ProductCommands { +Handle(CreateProductCommand) ProductDto }
   class CartCommands { +Handle(AddToCartCommand) void }
   class OrderCommands { +Handle(CreateOrderCommand) OrderDto }
+  class AuthController { +Register(RegisterRequest) JWT +Login(LoginRequest) JWT }
+  class CustomerController { +Cart() +AddToCart(AddItemRequest) +Orders() }
   class IProductRepository
   class ICartRepository
   class IOrderRepository
+  AuthController --> AppUser
+  CustomerController --> CartCommands
+  CustomerController --> ICartRepository
+  CustomerController --> IProductRepository
   ProductCommands --> IProductRepository
   CartCommands --> ICartRepository
   CartCommands --> IProductRepository
@@ -42,3 +49,19 @@ classDiagram
   OrderCommands --> IProductRepository
   OrderCommands --> IOrderRepository
 ```
+
+## Frontend route map
+
+```mermaid
+graph TD
+  Home[/]
+  Home --> Product[/products/:id]
+  Home --> Cart[/cart]
+  Cart --> Checkout[/checkout]
+  Checkout --> Orders[/orders]
+  Home --> Login[/login]
+  Login --> Register[/register]
+  Login --> Account[/account]
+  Home --> Admin[/admin]
+  Admin --> AdminProducts[/admin/products]
+  Unknown --> NotFound[NotFound]
